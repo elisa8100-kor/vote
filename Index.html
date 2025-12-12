@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>투표 시스템</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 30px;
+        background: #f5f5f5;
+    }
+    h2 {
+        margin-bottom: 20px;
+    }
+    .item {
+        margin: 10px 0;
+        display: block;
+        font-size: 18px;
+    }
+    button {
+        margin-top: 20px;
+        padding: 10px 22px;
+        background: black;
+        color: white;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 6px;
+    }
+    #results p {
+        background: white;
+        padding: 10px 15px;
+        margin: 5px 0;
+        border-radius: 5px;
+        box-shadow: 0px 1px 3px rgba(0,0,0,0.15);
+    }
+</style>
+</head>
+<body>
+
+<h2>도메인 추천 투표</h2>
+
+<label class="item"><input type="radio" name="vote" value="halam.store"> halam.store</label>
+<label class="item"><input type="radio" name="vote" value="halam.site"> halam.site</label>
+<label class="item"><input type="radio" name="vote" value="halam.xzy"> halam.xzy</label>
+<label class="item"><input type="radio" name="vote" value="halam.cloud"> halam.cloud</label>
+<label class="item"><input type="radio" name="vote" value="halam.my"> halam.my</label>
+
+<button onclick="submitVote()">투표하기</button>
+
+<h3>현재 결과</h3>
+<div id="results">불러오는 중...</div>
+
+<!-- Firebase Modular SDK -->
+<script type="module">
+    // Firebase import
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, updateDoc, onSnapshot, increment } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // *** 당신이 준 firebaseConfig 그대로 삽입 ***
+    const firebaseConfig = {
+      apiKey: "AIzaSyDI6VGnM5xPSNZX8T5W-meWeDI7-VXof1U",
+      authDomain: "pleasevote-ff2c5.firebaseapp.com",
+      projectId: "pleasevote-ff2c5",
+      storageBucket: "pleasevote-ff2c5.firebasestorage.app",
+      messagingSenderId: "759303245158",
+      appId: "1:759303245158:web:464ba518290af1770a4ca7",
+      measurementId: "G-BZBQW3SKJS"
+    };
+
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 데이터 반영 (투표)
+    async function submitVote() {
+        const choice = document.querySelector('input[name="vote"]:checked');
+        if (!choice) { 
+            alert("투표할 항목을 선택하세요"); 
+            return; 
+        }
+
+        const ref = doc(db, "votes", choice.value);
+
+        try {
+            await setDoc(ref, { count: increment(1) }, { merge: true });
+            alert("투표 완료!");
+        } catch (err) {
+            console.error(err);
+            alert("투표 중 오류 발생");
+        }
+    }
+
+    // 실시간 결과 표시
+    const resultsDiv = document.getElementById("results");
+
+    onSnapshot(doc(db, "votes", "halam.store"), (docSnap) => updateResult("halam.store", docSnap));
+    onSnapshot(doc(db, "votes", "halam.site"),  (docSnap) => updateResult("halam.site", docSnap));
+    onSnapshot(doc(db, "votes", "halam.xzy"),   (docSnap) => updateResult("halam.xzy", docSnap));
+    onSnapshot(doc(db, "votes", "halam.cloud"), (docSnap) => updateResult("halam.cloud", docSnap));
+    onSnapshot(doc(db, "votes", "halam.my"),    (docSnap) => updateResult("halam.my", docSnap));
+
+    let voteData = {};
+
+    function updateResult(name, docSnap) {
+        voteData[name] = docSnap.exists() ? docSnap.data().count : 0;
+
+        let html = "";
+        for (let key in voteData) {
+            html += `<p>${key}: ${voteData[key]}표</p>`;
+        }
+        resultsDiv.innerHTML = html;
+    }
+</script>
+
+</body>
+</html>
